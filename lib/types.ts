@@ -60,7 +60,8 @@ export interface AccountRaw {
   nextAction: string;
   actionOwner: string;
   blockerType: BlockerType;
-  manualHealth: Health | null;
+  manualHealthRelationship: Health | null;
+  manualHealthDelivery: Health | null;
   expansionStage: ExpansionStage;
   expansionValue: number;
   churned: boolean;

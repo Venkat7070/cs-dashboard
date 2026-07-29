@@ -13,7 +13,8 @@ const EXPORT_HEADERS = [
   "Platform + Voice ARR",
   "Total ARR",
   "Computed Health",
-  "Manual Health",
+  "Relationship Health",
+  "Delivery Health",
   "Containment %",
   "Consumption %",
   "Bot CSAT",
@@ -40,7 +41,8 @@ function toRow(a: Account): (string | number)[] {
     a.arr,
     a.totalArr,
     a.computedHealth,
-    a.manualHealth ?? "",
+    a.manualHealthRelationship ?? "",
+    a.manualHealthDelivery ?? "",
     Math.round(a.containmentPct),
     Math.round(a.consumptionPct),
     Math.round(a.botCsat),
@@ -76,7 +78,7 @@ export default function ExportButton({ accounts }: { accounts: Account[] }) {
     <button
       onClick={handleExport}
       disabled={accounts.length === 0}
-      className="rounded-md border border-border bg-panel px-3 py-1.5 text-sm text-text hover:border-accent/60 disabled:opacity-50"
+      className="rounded-md border border-border bg-panel px-3 py-1.5 text-sm text-text transition-colors hover:border-accent/60 disabled:opacity-50"
     >
       Export CSV
     </button>

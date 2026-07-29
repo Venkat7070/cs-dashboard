@@ -54,7 +54,7 @@ export default function FilterBar({
       <select
         value={filters.renewalWindow}
         onChange={(e) => set("renewalWindow", e.target.value as RenewalWindow)}
-        className="rounded-md border border-border bg-panel px-3 py-1.5 text-sm text-text hover:border-accent/60"
+        className="rounded-md border border-border bg-panel px-3 py-1.5 text-sm text-text transition-colors hover:border-accent/60"
         aria-label="Renewal window"
       >
         <option value="all">All renewals</option>
@@ -75,7 +75,7 @@ export default function FilterBar({
       {isFilterActive(filters) && (
         <button
           onClick={onReset}
-          className="rounded-md border border-border px-3 py-1.5 text-sm text-text/70 hover:border-accent/60 hover:text-text"
+          className="rounded-md border border-border px-3 py-1.5 text-sm text-text/70 transition-colors hover:border-accent/60 hover:text-text"
         >
           Reset
         </button>

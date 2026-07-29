@@ -1,6 +1,7 @@
 import { Account, AccountsResponse, ParseDiagnostics } from "./types";
 import { buildAccounts, loadSampleAccounts } from "./sampleData";
-import { fetchSheetRows } from "./sheets";
+import { fetchSheetRows, fetchSecondarySheetRows } from "./sheets";
+import { mergeSheetTables } from "./mergeSheets";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -46,8 +47,10 @@ export async function getAccounts(opts: { fresh?: boolean } = {}): Promise<Accou
   }
 
   try {
-    const { header, rows } = await fetchSheetRows();
-    const { accounts, diagnostics } = buildAccounts(header, rows);
+    const primaryTable = await fetchSheetRows();
+    const secondaryTable = await fetchSecondarySheetRows();
+    const table = secondaryTable ? mergeSheetTables(primaryTable, secondaryTable) : primaryTable;
+    const { accounts, diagnostics } = buildAccounts(table.header, table.rows);
     cache = { accounts, diagnostics, fetchedAt: now };
     return {
       accounts,

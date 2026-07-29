@@ -1,13 +1,8 @@
 import { Account, AccountComputed, AccountRaw, Health } from "./types";
 
 const WEIGHTS = {
-  consumption: 0.25,
-  containment: 0.2,
-  useCases: 0.15,
-  championExec: 0.15,
-  payment: 0.1,
-  csat: 0.1,
-  renewal: 0.05,
+  renewal: 0.7,
+  blockers: 0.3,
 } as const;
 
 const RENEWAL_STATUS_SCORE: Record<AccountRaw["renewalStatus"], number> = {
@@ -18,11 +13,8 @@ const RENEWAL_STATUS_SCORE: Record<AccountRaw["renewalStatus"], number> = {
   Churned: 0,
 };
 
-const CHAMPION_SCORE: Record<AccountRaw["championStatus"], number> = {
-  Active: 100,
-  "At Risk": 50,
-  Departed: 0,
-};
+/** Worse-is-lower ranking, used to pick the more severe of two manual health assessments. */
+const HEALTH_RANK: Record<Health, number> = { Red: 0, Amber: 1, Green: 2 };
 
 const GREEN_THRESHOLD = 75;
 const AMBER_THRESHOLD = 50;
@@ -34,49 +26,24 @@ export function computeConsumptionPct(raw: Pick<AccountRaw, "committedConversati
   return (raw.consumedConversations / raw.committedConversations) * 100;
 }
 
-function computeUseCasePct(raw: Pick<AccountRaw, "liveUseCases" | "contractedUseCases">): number {
-  if (raw.contractedUseCases <= 0) return 100;
-  return (raw.liveUseCases / raw.contractedUseCases) * 100;
-}
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
-}
-
 export interface HealthResult {
   score: number;
   health: Health;
 }
 
-/** Weighted composite health score (0-100) with hard overrides to Red. */
-export function computeHealthScore(raw: AccountRaw, consumptionPct: number): HealthResult {
-  const containmentPct = raw.containmentPct;
-
-  const consumptionScore = clamp(consumptionPct, 0, 100);
-  const containmentScore = clamp(containmentPct, 0, 100);
-  const useCaseScore = clamp(computeUseCasePct(raw), 0, 100);
-  const championExecScore =
-    0.7 * CHAMPION_SCORE[raw.championStatus] + 0.3 * (raw.execSponsorEngaged ? 100 : 0);
-  const paymentScore = raw.paymentLate ? 0 : 100;
-  const csatScore = clamp(raw.botCsat, 0, 100);
+/**
+ * Fallback score (0-100) used only when neither Relationship nor Delivery Health has been
+ * manually assessed yet: renewal status (70%) plus whether any blockers are logged (30%).
+ */
+export function computeHealthScore(raw: Pick<AccountRaw, "renewalStatus" | "internalBlockers" | "externalBlockers">): HealthResult {
   const renewalScore = RENEWAL_STATUS_SCORE[raw.renewalStatus];
+  const blockerCount = [raw.internalBlockers, raw.externalBlockers].filter((b) => b.trim().length > 0).length;
+  const blockerScore = blockerCount === 0 ? 100 : blockerCount === 1 ? 50 : 0;
 
-  const score =
-    WEIGHTS.consumption * consumptionScore +
-    WEIGHTS.containment * containmentScore +
-    WEIGHTS.useCases * useCaseScore +
-    WEIGHTS.championExec * championExecScore +
-    WEIGHTS.payment * paymentScore +
-    WEIGHTS.csat * csatScore +
-    WEIGHTS.renewal * renewalScore;
-
-  const hardOverride =
-    consumptionPct < 40 || containmentPct < 40 || raw.championStatus === "Departed";
+  const score = WEIGHTS.renewal * renewalScore + WEIGHTS.blockers * blockerScore;
 
   let health: Health;
-  if (hardOverride) {
-    health = "Red";
-  } else if (score >= GREEN_THRESHOLD) {
+  if (score >= GREEN_THRESHOLD) {
     health = "Green";
   } else if (score >= AMBER_THRESHOLD) {
     health = "Amber";
@@ -87,6 +54,12 @@ export function computeHealthScore(raw: AccountRaw, consumptionPct: number): Hea
   return { score: Math.round(score * 10) / 10, health };
 }
 
+/** The more severe of the two manual assessments, or whichever is set if only one is. */
+function worseManualHealth(a: Health | null, b: Health | null): Health | null {
+  if (a && b) return HEALTH_RANK[a] <= HEALTH_RANK[b] ? a : b;
+  return a ?? b;
+}
+
 function daysBetween(fromMs: number, toIso: string): number {
   const toMs = Date.parse(`${toIso}T00:00:00Z`);
   return Math.round((toMs - fromMs) / 86_400_000);
@@ -95,8 +68,9 @@ function daysBetween(fromMs: number, toIso: string): number {
 /** Adds computed/derived fields (health score, consumption %, renewal windows) to a raw record. */
 export function computeAccount(raw: AccountRaw, now: Date = new Date()): Account {
   const consumptionPct = computeConsumptionPct(raw);
-  const { score, health: scoredHealth } = computeHealthScore(raw, consumptionPct);
-  const health = raw.manualHealth ?? scoredHealth;
+  const { score, health: scoredHealth } = computeHealthScore(raw);
+  const manualHealth = worseManualHealth(raw.manualHealthRelationship, raw.manualHealthDelivery);
+  const health = manualHealth ?? scoredHealth;
 
   const nowMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   const daysToRenewal = raw.renewalDate ? daysBetween(nowMs, raw.renewalDate) : null;
@@ -110,7 +84,7 @@ export function computeAccount(raw: AccountRaw, now: Date = new Date()): Account
     isRenewal180,
     computedHealth: health,
     computedHealthScore: score,
-    healthOverridden: raw.manualHealth != null && raw.manualHealth !== scoredHealth,
+    healthOverridden: manualHealth != null && manualHealth !== scoredHealth,
   };
 
   return { ...raw, ...computed };

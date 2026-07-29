@@ -8,7 +8,6 @@ export interface KpiSummary {
   renewal180Arr: number;
   renewal180Count: number;
   renewal180NotGreenArr: number;
-  arrWeightedContainment: number;
   expansionPipeline: number;
 }
 
@@ -20,7 +19,6 @@ export function computeKpis(accounts: Account[]): KpiSummary {
   let renewal180Arr = 0;
   let renewal180Count = 0;
   let renewal180NotGreenArr = 0;
-  let containmentWeighted = 0;
   let expansionPipeline = 0;
 
   for (const a of accounts) {
@@ -33,7 +31,6 @@ export function computeKpis(accounts: Account[]): KpiSummary {
       renewal180Count += 1;
       if (a.computedHealth !== "Green") renewal180NotGreenArr += a.arr;
     }
-    containmentWeighted += a.arr * a.containmentPct;
     if (a.expansionStage !== "None") expansionPipeline += a.expansionValue;
   }
 
@@ -45,7 +42,6 @@ export function computeKpis(accounts: Account[]): KpiSummary {
     renewal180Arr,
     renewal180Count,
     renewal180NotGreenArr,
-    arrWeightedContainment: bookArr > 0 ? containmentWeighted / bookArr : 0,
     expansionPipeline,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { KpiSummary } from "@/lib/kpi";
-import { formatCurrency, formatCurrencyFull, formatPct } from "@/lib/format";
+import { formatCurrency, formatCurrencyFull } from "@/lib/format";
 
 function Tile({
   label,
@@ -15,7 +15,7 @@ function Tile({
   subClassName?: string;
 }) {
   return (
-    <div className="flex-1 min-w-[180px] rounded-lg border border-border bg-panel px-4 py-3">
+    <div className="flex-1 min-w-[180px] rounded-lg border border-border bg-panel px-4 py-3 shadow-sm shadow-black/20">
       <div className="text-xs uppercase tracking-wide text-text/60">{label}</div>
       <div className="mt-1 font-display text-2xl font-medium num" title={value}>
         {value}
@@ -42,7 +42,6 @@ export default function KpiStrip({ kpi }: { kpi: KpiSummary }) {
         sub={`${kpi.renewal180Count} accounts · ${formatCurrency(kpi.renewal180NotGreenArr)} not green`}
         subClassName="text-health-amber"
       />
-      <Tile label="ARR-weighted containment" value={formatPct(kpi.arrWeightedContainment, 1)} />
       <Tile label="Expansion pipeline" value={formatCurrency(kpi.expansionPipeline)} />
     </div>
   );

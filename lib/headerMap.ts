@@ -35,7 +35,8 @@ export type FieldKey =
   | "nextAction"
   | "actionOwner"
   | "blockerType"
-  | "health"
+  | "relationshipHealth"
+  | "deliveryHealth"
   | "expansionStage"
   | "expansionValue"
   | "totalArr"
@@ -55,6 +56,7 @@ const ALIASES: Record<string, FieldKey> = {
   id: "accountId",
   customerid: "accountId",
   accountname: "accountName",
+  accounts: "accountName",
   account: "accountName",
   customer: "accountName",
   customername: "accountName",
@@ -104,11 +106,20 @@ const ALIASES: Record<string, FieldKey> = {
   nextaction: "nextAction",
   actionowner: "actionOwner",
   blockertype: "blockerType",
-  health: "health",
-  ragstats: "health",
+  relationshiphealth: "relationshipHealth",
+  deliveryhealth: "deliveryHealth",
+  // Legacy single-column health (e.g. sample data's "Health"/"RAG Stats") maps to Relationship Health.
+  health: "relationshipHealth",
+  ragstats: "relationshipHealth",
   expansionstage: "expansionStage",
   expansionvalue: "expansionValue",
+  potentialarrexpansion: "expansionValue",
   churned: "churned",
+  primarytopusecases: "primaryUseCase",
+  lastmbrqbr: "lastEbrDate",
+  internalblockerschallenges: "internalBlockers",
+  externalblockerschallenges: "externalBlockers",
+  nextstepsactionitems: "nextAction",
 };
 
 /**

@@ -63,15 +63,15 @@ export default function BreakdownsShell() {
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
-      <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-5">
         <div>
           <h1 className="font-display text-2xl font-medium text-text">ARR Breakdowns</h1>
-          <p className="text-sm text-text/50">Total ARR sliced by region, health, owner, tier, and churn</p>
+          <p className="mt-0.5 text-sm text-text/50">Total ARR sliced by region, health, owner, tier, and churn</p>
         </div>
         <button
           onClick={() => load(true)}
           disabled={refreshing}
-          className="rounded-md border border-border bg-panel px-3 py-1.5 text-sm text-text hover:border-accent/60 disabled:opacity-50"
+          className="rounded-md border border-border bg-panel px-3 py-1.5 text-sm text-text transition-colors hover:border-accent/60 disabled:opacity-50"
         >
           {refreshing ? "Refreshing…" : "Refresh"}
         </button>
@@ -90,7 +90,10 @@ export default function BreakdownsShell() {
       )}
 
       {loading ? (
-        <div className="py-24 text-center text-text/50">Loading accounts…</div>
+        <div className="flex flex-col items-center gap-3 py-24 text-text/50">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-accent" />
+          <span className="text-sm">Loading accounts…</span>
+        </div>
       ) : accounts.length === 0 ? (
         <EmptyState sheetTab={data?.sheetTab} />
       ) : (

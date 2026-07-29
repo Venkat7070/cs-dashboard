@@ -18,7 +18,7 @@ export default function AttentionQueue({ accounts, onSelect }: AttentionQueuePro
   }, [accounts]);
 
   return (
-    <div className="rounded-lg border border-border bg-panel p-3">
+    <div className="rounded-lg border border-border bg-panel p-3 shadow-sm shadow-black/20">
       <div className="mb-2 flex items-center justify-between px-1">
         <h2 className="text-sm font-medium text-text/80">Attention queue</h2>
         <span className="text-xs text-text/50 num">{queue.length} accounts</span>
@@ -31,7 +31,7 @@ export default function AttentionQueue({ accounts, onSelect }: AttentionQueuePro
             <button
               key={a.accountId}
               onClick={() => onSelect(a.accountId)}
-              className="flex flex-col gap-2 rounded-lg border border-border bg-bg/60 p-3 text-left hover:border-accent/60"
+              className="flex flex-col gap-2 rounded-lg border border-border bg-bg/60 p-3 text-left transition-colors hover:border-accent/60"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>

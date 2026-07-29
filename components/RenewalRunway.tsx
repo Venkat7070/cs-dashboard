@@ -95,14 +95,14 @@ export default function RenewalRunway({ accounts, onSelect }: RenewalRunwayProps
 
   if (bubbles.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-panel p-6 text-center text-sm text-text/50">
+      <div className="rounded-lg border border-border bg-panel p-6 text-center text-sm text-text/50 shadow-sm shadow-black/20">
         No renewals in the next 12 months for the current filters.
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-border bg-panel p-3">
+    <div className="rounded-lg border border-border bg-panel p-3 shadow-sm shadow-black/20">
       <h2 className="mb-1 px-1 text-sm font-medium text-text/80">Renewal runway (next 12 months)</h2>
       <div ref={containerRef} className="relative w-full overflow-x-auto">
         <svg

@@ -5,30 +5,29 @@ export interface SheetTable {
   rows: string[][];
 }
 
-/**
- * Reads the configured tab of the private Google Sheet using a service-account
- * JWT. The sheet must be shared with GOOGLE_SERVICE_ACCOUNT_EMAIL as Viewer.
- */
-export async function fetchSheetRows(): Promise<SheetTable> {
+export interface SheetRef {
+  sheetId: string;
+  tab: string;
+}
+
+function getAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const rawKey = process.env.GOOGLE_PRIVATE_KEY;
-  const sheetId = process.env.SHEET_ID;
-  const tab = process.env.SHEET_TAB || "Data";
 
-  if (!email || !rawKey || !sheetId) {
-    throw new Error(
-      "Missing Google Sheets credentials: set GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, and SHEET_ID."
-    );
+  if (!email || !rawKey) {
+    throw new Error("Missing Google Sheets credentials: set GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_PRIVATE_KEY.");
   }
 
-  const privateKey = rawKey.replace(/\\n/g, "\n");
-
-  const auth = new google.auth.JWT({
+  return new google.auth.JWT({
     email,
-    key: privateKey,
+    key: rawKey.replace(/\\n/g, "\n"),
     scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
   });
+}
 
+/** Reads one tab of one spreadsheet. The sheet must be shared with GOOGLE_SERVICE_ACCOUNT_EMAIL as Viewer. */
+export async function fetchTable({ sheetId, tab }: SheetRef): Promise<SheetTable> {
+  const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
@@ -41,4 +40,26 @@ export async function fetchSheetRows(): Promise<SheetTable> {
     header: (header ?? []).map((c) => String(c ?? "")),
     rows: rows.map((row) => row.map((c) => String(c ?? ""))),
   };
+}
+
+export function primarySheetRef(): SheetRef {
+  const sheetId = process.env.SHEET_ID;
+  if (!sheetId) throw new Error("Missing Google Sheets credentials: set SHEET_ID.");
+  return { sheetId, tab: process.env.SHEET_TAB || "Data" };
+}
+
+/** The secondary sheet is optional — set SHEET2_ID to enable merging a second source by account key. */
+export function secondarySheetRef(): SheetRef | null {
+  const sheetId = process.env.SHEET2_ID;
+  if (!sheetId) return null;
+  return { sheetId, tab: process.env.SHEET2_TAB || "Data" };
+}
+
+export async function fetchSheetRows(): Promise<SheetTable> {
+  return fetchTable(primarySheetRef());
+}
+
+export async function fetchSecondarySheetRows(): Promise<SheetTable | null> {
+  const ref = secondarySheetRef();
+  return ref ? fetchTable(ref) : null;
 }

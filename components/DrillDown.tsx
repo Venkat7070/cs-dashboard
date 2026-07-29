@@ -31,7 +31,7 @@ function MetricCard({
   color?: string;
 }) {
   return (
-    <div className="min-w-0 rounded-lg border border-border bg-panel px-3 py-2">
+    <div className="min-w-0 rounded-lg border border-border bg-panel px-3 py-2 shadow-sm shadow-black/20">
       <div className="truncate text-xs uppercase tracking-wide text-text/50">{label}</div>
       <div
         className="mt-1 truncate font-display text-xl num"
@@ -91,7 +91,7 @@ export default function DrillDown({ account, sheetId, onClose }: DrillDownProps)
           <button
             onClick={onClose}
             aria-label="Close details"
-            className="rounded-md border border-border px-2 py-1 text-text/70 hover:border-accent/60 hover:text-text"
+            className="rounded-md border border-border px-2 py-1 text-text/70 transition-colors hover:border-accent/60 hover:text-text"
           >
             ✕
           </button>
@@ -128,10 +128,16 @@ export default function DrillDown({ account, sheetId, onClose }: DrillDownProps)
           </div>
           {account.healthOverridden && (
             <div className="mt-1.5 text-xs text-text/50">
-              RAG Stats overrides the algorithmic score <span className="text-accent">· override</span>
+              Manual health assessment overrides the algorithmic score <span className="text-accent">· override</span>
             </div>
           )}
           <div className="mt-1.5 text-xs text-text/50 num">Score: {account.computedHealthScore}/100</div>
+          {(account.manualHealthRelationship || account.manualHealthDelivery) && (
+            <div className="mt-2 flex gap-4 text-xs text-text/60">
+              <span>Relationship: {account.manualHealthRelationship ?? "—"}</span>
+              <span>Delivery: {account.manualHealthDelivery ?? "—"}</span>
+            </div>
+          )}
         </div>
 
         <div className="mt-4 rounded-lg border border-accent/40 bg-accent/10 p-3">
@@ -172,7 +178,7 @@ export default function DrillDown({ account, sheetId, onClose }: DrillDownProps)
               href={sheetUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-md border border-border px-3 py-1.5 text-text/80 hover:border-accent/60 hover:text-accent"
+              className="rounded-md border border-border px-3 py-1.5 text-text/80 transition-colors hover:border-accent/60 hover:text-accent"
             >
               Open in Sheet ↗
             </a>

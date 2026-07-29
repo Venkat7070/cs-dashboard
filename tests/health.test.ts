@@ -37,7 +37,8 @@ function baseRaw(overrides: Partial<AccountRaw> = {}): AccountRaw {
     nextAction: "",
     actionOwner: "",
     blockerType: "None",
-    manualHealth: null,
+    manualHealthRelationship: null,
+    manualHealthDelivery: null,
     expansionStage: "None",
     expansionValue: 0,
     churned: false,
@@ -61,53 +62,30 @@ describe("computeConsumptionPct", () => {
 });
 
 describe("computeHealthScore", () => {
-  it("scores a healthy account as Green", () => {
-    const raw = baseRaw();
-    const { health } = computeHealthScore(raw, computeConsumptionPct(raw));
+  it("scores a committed, blocker-free account as Green", () => {
+    const raw = baseRaw({ renewalStatus: "Committed" });
+    const { health } = computeHealthScore(raw);
     expect(health).toBe("Green");
   });
 
-  it("hard-overrides to Red when consumption < 40%, even with good other metrics", () => {
-    const raw = baseRaw({ consumedConversations: 30000 }); // 30% of 100000
-    const { health } = computeHealthScore(raw, computeConsumptionPct(raw));
-    expect(health).toBe("Red");
-  });
-
-  it("hard-overrides to Red when containment < 40%", () => {
-    const raw = baseRaw({ containmentPct: 25 });
-    const { health } = computeHealthScore(raw, computeConsumptionPct(raw));
-    expect(health).toBe("Red");
-  });
-
-  it("hard-overrides to Red when champion has departed, regardless of score", () => {
-    const raw = baseRaw({ championStatus: "Departed" });
-    const { health } = computeHealthScore(raw, computeConsumptionPct(raw));
-    expect(health).toBe("Red");
-  });
-
-  it("scores a mediocre account as Amber", () => {
-    const raw = baseRaw({
-      consumedConversations: 55000, // 55%
-      containmentPct: 60,
-      botCsat: 65,
-      renewalStatus: "In Negotiation",
-    });
-    const { health } = computeHealthScore(raw, computeConsumptionPct(raw));
+  it("scores a mediocre renewal status as Amber", () => {
+    const raw = baseRaw({ renewalStatus: "In Negotiation" });
+    const { health } = computeHealthScore(raw);
     expect(health).toBe("Amber");
   });
 
-  it("scores a poor (but not hard-overridden) account as Red", () => {
-    const raw = baseRaw({
-      consumedConversations: 45000, // 45%, above the 40% hard-override floor
-      containmentPct: 45,
-      botCsat: 40,
-      paymentLate: true,
-      renewalStatus: "At Risk",
-      championStatus: "At Risk",
-      execSponsorEngaged: false,
-    });
-    const { health } = computeHealthScore(raw, computeConsumptionPct(raw));
+  it("scores At Risk renewal as Red", () => {
+    const raw = baseRaw({ renewalStatus: "At Risk" });
+    const { health } = computeHealthScore(raw);
     expect(health).toBe("Red");
+  });
+
+  it("penalizes logged blockers even with a good renewal status", () => {
+    const clean = computeHealthScore(baseRaw({ renewalStatus: "Committed" }));
+    const withBlockers = computeHealthScore(
+      baseRaw({ renewalStatus: "Committed", internalBlockers: "Budget freeze", externalBlockers: "IT delay" })
+    );
+    expect(withBlockers.score).toBeLessThan(clean.score);
   });
 });
 
@@ -136,23 +114,30 @@ describe("computeAccount", () => {
     expect(account.isRenewal90).toBe(false);
   });
 
-  it("manual health (e.g. RAG Stats) wins over the computed score, and flags the override", () => {
-    const raw = baseRaw({ manualHealth: "Red" }); // scored health would be Green
+  it("manual health assessment wins over the computed score, and flags the override", () => {
+    const raw = baseRaw({ manualHealthRelationship: "Red" }); // scored health would be Green
     const account = computeAccount(raw, now);
     expect(account.computedHealth).toBe("Red");
     expect(account.computedHealthScore).toBeGreaterThanOrEqual(75); // score still computed for reference
     expect(account.healthOverridden).toBe(true);
   });
 
+  it("takes the worse of Relationship and Delivery Health when both are set", () => {
+    const raw = baseRaw({ manualHealthRelationship: "Green", manualHealthDelivery: "Amber" });
+    const account = computeAccount(raw, now);
+    expect(account.computedHealth).toBe("Amber");
+  });
+
   it("does not flag healthOverridden when manual health matches computed", () => {
-    const raw = baseRaw({ manualHealth: "Green" });
+    const raw = baseRaw({ manualHealthRelationship: "Green" });
     const account = computeAccount(raw, now);
     expect(account.healthOverridden).toBe(false);
   });
 
-  it("does not flag healthOverridden when manual health is absent", () => {
-    const raw = baseRaw({ manualHealth: null });
+  it("falls back to the computed score when no manual health is set", () => {
+    const raw = baseRaw({ manualHealthRelationship: null, manualHealthDelivery: null });
     const account = computeAccount(raw, now);
     expect(account.healthOverridden).toBe(false);
+    expect(account.computedHealth).toBe("Green");
   });
 });

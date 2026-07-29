@@ -31,7 +31,7 @@ export default function ArrBreakdownChart({
 }) {
   const rotateLabels = data.length > 6;
   return (
-    <div className="rounded-lg border border-border bg-panel p-3">
+    <div className="rounded-lg border border-border bg-panel p-3 shadow-sm shadow-black/20">
       <h2 className="mb-2 px-1 text-sm font-medium text-text/80">{title}</h2>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">

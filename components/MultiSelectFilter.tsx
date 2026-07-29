@@ -33,7 +33,7 @@ export default function MultiSelectFilter({ label, options, selected, onChange }
   return (
     <details ref={detailsRef} className="relative">
       <summary
-        className="cursor-pointer select-none list-none rounded-md border border-border bg-panel px-3 py-1.5 text-sm text-text hover:border-accent/60 [&::-webkit-details-marker]:hidden"
+        className="cursor-pointer select-none list-none rounded-md border border-border bg-panel px-3 py-1.5 text-sm text-text transition-colors hover:border-accent/60 [&::-webkit-details-marker]:hidden"
       >
         {label}
         {selected.length > 0 && (
